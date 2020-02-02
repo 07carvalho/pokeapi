@@ -1,3 +1,8 @@
 from django.contrib import admin
 
-# Register your models here.
+from apiV1.models import *
+
+@admin.register(Pokemon, PokemonType)
+
+class ApiV1Admin(admin.ModelAdmin):
+    pass
