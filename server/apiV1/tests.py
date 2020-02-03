@@ -1,6 +1,9 @@
+import json
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APITestCase
+from rest_framework.authtoken.models import Token
 from apiV1.models.pokemon import *
 
 
@@ -84,4 +87,76 @@ class PokemonListAPIViewTestCase(APITestCase):
         response = self.client.get(self.url, {'q': 'bulb', 'type': 'poison'})
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data.get('results')))
+
+
+class UserRegistrationAPIViewTestCase(APITestCase):
+
+    url = reverse('user_registration')
+
+    def test_registration_user(self):
+        data = {
+            'username': 'ash',
+            'email': 'ash@gmail.com',
+            'password': 'pikachu',
+        }
+        response = self.client.post(self.url, data)
+        self.assertEqual(201, response.status_code)
+        self.assertTrue('auth_token' in json.loads(response.content))
+
+
+    def test_email_validation(self):
+        """
+        Try to create two users with the same email
+        """
+        data1 = {
+            'username': 'misty',
+            'email': 'misty@gmail.com',
+            'password': 'admin',
+        }
+        response = self.client.post(self.url, data1)
+        self.assertEqual(201, response.status_code)
+
+        data2 = {
+            'username': 'jessie',
+            'email': 'misty@gmail.com',
+            'password': '123456',
+        }
+        response = self.client.post(self.url, data2)
+        self.assertEqual(400, response.status_code)
+
+
+class UserLoginAPIViewTestCase(APITestCase):
+
+    url = reverse('user_login')
+
+    def setUp(self):
+        self.user = User.objects.create_user('ash', 'ash@gmail.com', 'pikachu')
+        
+
+    def test_login_right_credentials(self):
+        data = {
+            'username': 'ash',
+            'password': 'pikachu',
+        }
+        response = self.client.post(self.url, data)
+        self.assertEqual(200, response.status_code)
+        self.assertTrue('auth_token' in json.loads(response.content))
+
+
+    def test_login_wrong_credentials(self):
+        # trying to login with the wrong password
+        data1 = {
+            'username': 'ash',
+            'password': 'p123',
+        }
+        response = self.client.post(self.url, data1)
+        self.assertEqual(400, response.status_code)
+
+        # trying to login with the wrong username
+        data2 = {
+            'username': 'ash2',
+            'password': 'pikachu',
+        }
+        response = self.client.post(self.url, data2)
+        self.assertEqual(400, response.status_code)
 

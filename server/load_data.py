@@ -19,7 +19,6 @@ with open('../docs/pokemon.json') as json_file:
     data = json.load(json_file)
     for pokemon in data['pokemon']:
         with transaction.atomic():
-            print(pokemon)
             _id = pokemon.pop('id')
             types_list = pokemon.pop('types')
             obj = Pokemon.objects.create(**pokemon)
