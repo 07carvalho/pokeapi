@@ -27,7 +27,7 @@ class PokemonList(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         """
-        List pokemons
+        List pokemon
         """
         serializer = PokemonSerializer(self.get_queryset(), many=True)
         page = self.paginate_queryset(serializer.data)

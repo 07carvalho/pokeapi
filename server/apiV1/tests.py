@@ -160,3 +160,90 @@ class UserLoginAPIViewTestCase(APITestCase):
         response = self.client.post(self.url, data2)
         self.assertEqual(400, response.status_code)
 
+
+class TeamAPIViewTestCase(APITestCase):
+
+    login_url = reverse('user_login')
+    team_list_url = reverse('team_list')
+    team_detail_url = None
+
+    def setUp(self):
+        # create user
+        self.user = User.objects.create_user('ash', 'ash@gmail.com', 'pikachu')
+
+        # login
+        data = {
+            'username': 'ash',
+            'password': 'pikachu',
+        }
+        response = self.client.post(self.login_url, data)
+
+        self.auth_token = json.loads(response.content).get('auth_token')
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.auth_token)
+
+        # create seven pokemon
+        for i in range(0, 8):
+            data = {
+                'name': 'bulbasaur' + str(i),
+                'height': 0.7,
+                'weight': 6.9,
+                'xp': 64,
+                'types': ['poison', 'grass'],
+                'image': 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'
+            }
+
+            types_list = data.pop('types')
+            pokemon = Pokemon.objects.create(**data)
+
+            for tp in types_list:
+                t, created = PokemonType.objects.get_or_create(name=tp)
+                pokemon.types.add(t)
+
+
+    def test_registration_team_wrong_name(self):
+        data = {
+            "name": "Poke",
+            "pokemons": [1,2,3,4,5]
+        }
+        response = self.client.post(self.team_list_url, data, format='json' )
+        self.assertEqual(400, response.status_code)
+
+
+    def test_registration_team_wrong_pokemon_qty(self):
+        data = {
+            "name": "Gotta catch 'em all!",
+            "pokemons": []
+        }
+        response = self.client.post(self.team_list_url, data, format='json' )
+        self.assertEqual(400, response.status_code)
+
+        data = {
+            "name": "Gotta catch 'em all!",
+            "pokemons": [1,2,3,4,5,6,7]
+        }
+        response = self.client.post(self.team_list_url, data, format='json' )
+        self.assertEqual(400, response.status_code)
+
+
+    def test_registration_and_update_team(self):
+        # registration
+        data = {
+            "name": "Gotta catch 'em all!",
+            "pokemons": [1,2,3,4,5]
+        }
+        response = self.client.post(self.team_list_url, data, format='json' )
+        self.assertEqual(201, response.status_code)
+        self.assertEqual(len(data.get('pokemons')), len(json.loads(response.content).get('pokemons')))
+        self.team_detail_url = reverse('team_detail', kwargs={'team_id': json.loads(response.content).get('id')})
+
+        # update
+        new_data = {
+            "name": "Gotta catch 'em all!",
+            "pokemons": [3,4,5]
+        }
+        response = self.client.put(self.team_detail_url, new_data, format='json' )
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(len(new_data.get('pokemons')), len(json.loads(response.content).get('pokemons')))
+
+
+        

@@ -7,7 +7,7 @@ from rest_framework.authtoken.models import Token
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     """
-    This serialize will validade the registration of a new user.
+    This serializer will validade the registration of a new user.
     """
     password = serializers.CharField(write_only=True)
 
@@ -28,7 +28,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 class UserLoginSerializer(serializers.Serializer):
     """
-    This serialize will validade a user login
+    This serializer will validade a user login
     """
     username = serializers.CharField(required=True)
     password = serializers.CharField(required=True)
