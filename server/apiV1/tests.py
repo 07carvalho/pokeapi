@@ -101,7 +101,6 @@ class UserRegistrationAPIViewTestCase(APITestCase):
         }
         response = self.client.post(self.url, data)
         self.assertEqual(201, response.status_code)
-        self.assertTrue('auth_token' in json.loads(response.content))
 
 
     def test_email_validation(self):
@@ -166,6 +165,7 @@ class TeamAPIViewTestCase(APITestCase):
     login_url = reverse('user_login')
     team_list_url = reverse('team_list')
     team_detail_url = None
+    created_pokemon_ids = []
 
     def setUp(self):
         # create user
@@ -194,56 +194,64 @@ class TeamAPIViewTestCase(APITestCase):
 
             types_list = data.pop('types')
             pokemon = Pokemon.objects.create(**data)
-
+            
+            # once the test database is created and droped in each test cycle
+            # the pokemon ids change, so we need to append in a list
+            self.created_pokemon_ids.append(pokemon.id)
+            
             for tp in types_list:
                 t, created = PokemonType.objects.get_or_create(name=tp)
                 pokemon.types.add(t)
 
 
     def test_registration_team_wrong_name(self):
+        # will create a pokemon team with 6 pokemon
         data = {
-            "name": "Poke",
-            "pokemons": [1,2,3,4,5]
+            'name': 'Poke',
+            'pokemons': self.created_pokemon_ids[0:6]
         }
-        response = self.client.post(self.team_list_url, data, format='json' )
+        response = self.client.post(self.team_list_url, data, format='json')
         self.assertEqual(400, response.status_code)
 
 
     def test_registration_team_wrong_pokemon_qty(self):
+        # will try to create a pokemon team with pokemons list empty
         data = {
-            "name": "Gotta catch 'em all!",
-            "pokemons": []
+            'name': 'Gotta catch \'em all!',
+            'pokemons': []
         }
-        response = self.client.post(self.team_list_url, data, format='json' )
+        response = self.client.post(self.team_list_url, data, format='json')
         self.assertEqual(400, response.status_code)
-
+        
+        # will try to crate a pokemon team with seven pokemon
         data = {
-            "name": "Gotta catch 'em all!",
-            "pokemons": [1,2,3,4,5,6,7]
+            'name': 'Gotta catch \'em all!',
+            'pokemons': self.created_pokemon_ids
         }
-        response = self.client.post(self.team_list_url, data, format='json' )
+        response = self.client.post(self.team_list_url, data, format='json')
         self.assertEqual(400, response.status_code)
 
 
     def test_registration_and_update_team(self):
         # registration
         data = {
-            "name": "Gotta catch 'em all!",
-            "pokemons": [1,2,3,4,5]
+            'name': 'Gotta catch \'em all!',
+            'pokemons': self.created_pokemon_ids[0:6]
         }
-        response = self.client.post(self.team_list_url, data, format='json' )
+        response = self.client.post(self.team_list_url, data, format='json')
         self.assertEqual(201, response.status_code)
         self.assertEqual(len(data.get('pokemons')), len(json.loads(response.content).get('pokemons')))
         self.team_detail_url = reverse('team_detail', kwargs={'team_id': json.loads(response.content).get('id')})
 
-        # update
+        # update the team with new name and less pokemon
         new_data = {
-            "name": "Gotta catch 'em all!",
-            "pokemons": [3,4,5]
+            'name': 'Gotta really catch',
+            'pokemons': self.created_pokemon_ids[0:3]
         }
-        response = self.client.put(self.team_detail_url, new_data, format='json' )
-        self.assertEqual(200, response.status_code)
-        self.assertEqual(len(new_data.get('pokemons')), len(json.loads(response.content).get('pokemons')))
+        new_response = self.client.put(self.team_detail_url, new_data, format='json' )
+        self.assertEqual(200, new_response.status_code)
+        self.assertEqual(new_data.get('name'), json.loads(new_response.content).get('name'))
+        self.assertEqual(len(new_data.get('pokemons')), len(json.loads(new_response.content).get('pokemons')))
 
 
         

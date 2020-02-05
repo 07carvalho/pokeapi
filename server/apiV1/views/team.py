@@ -32,7 +32,6 @@ class TeamList(generics.ListCreateAPIView):
         """
         Create a Pokemon team
         """
-        print(request)
         serializer = TeamRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -75,6 +74,9 @@ class TeamDetail(APIView):
 
 
     def put(self, request, team_id, format=None):
+        serializer = TeamRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
         team = self.get_object(team_id)
         with transaction.atomic():
             team.name = request.data.get('name', team.name)

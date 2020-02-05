@@ -20,12 +20,7 @@ class UserRegistration(generics.CreateAPIView):
 
         user = User.objects.create_user(username, email, password)
 
-        data = serializer.data
-        token, created = Token.objects.get_or_create(user=user)
-        data['auth_token'] = token.key
-
-        headers = self.get_success_headers(serializer.data)
-        return Response(data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class UserLogin(generics.GenericAPIView):
