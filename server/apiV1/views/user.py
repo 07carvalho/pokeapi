@@ -8,6 +8,7 @@ from apiV1.serializers.user import UserRegistrationSerializer, UserLoginSerializ
 
 class UserRegistration(generics.CreateAPIView):
 
+    description = 'This route is used to register a new user'
     serializer_class = UserRegistrationSerializer
 
     def create(self, request, *args, **kwargs):
@@ -44,28 +45,8 @@ class UserLogin(generics.GenericAPIView):
             )
 
 
-class UserLogin(generics.GenericAPIView):
-
-    serializer_class = UserLoginSerializer
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.user
-            token, created = Token.objects.get_or_create(user=user)
-            return Response(
-                data=TokenSerializer(token).data,
-                status=status.HTTP_200_OK,
-            )
-        else:
-            return Response(
-                data=serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-
 class UserLogout(generics.GenericAPIView):
-    
+
     def post(self, request, *args, **kwargs):
         request.user.auth_token.delete()
         return Response(status=status.HTTP_200_OK)

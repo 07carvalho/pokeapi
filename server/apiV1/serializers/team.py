@@ -1,7 +1,4 @@
-# from datetime import datetime
-# from django.contrib.auth import authenticate
-# from django.contrib.auth.models import User
-from ast import literal_eval
+from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 from apiV1.models.team import Team
 from apiV1.serializers.pokemon import PokemonSerializer
@@ -33,8 +30,7 @@ class TeamRegistrationSerializer(serializers.ModelSerializer):
     With this specific serializer for POST and PUT requests, we are able to work with
     a different data format, avoiding the overhead of pass a list of Pokemon Dicts as parameter  
     """
-
-    pokemons = serializers.ListField() # PokemonSerializer(many=True, read_only=True)
+    pokemons = serializers.ListField()
 
 
     class Meta:
@@ -59,9 +55,14 @@ class TeamRegistrationSerializer(serializers.ModelSerializer):
         """
         name = data.get('name')
         pokemons = data.get('pokemons')
+        errors = []
         if len(name) < self.min_characters_qty:
-            raise serializers.ValidationError(self.error_messages['invalid_name'])
+            errors.append({'invalid_name': _(self.error_messages['invalid_name'])})
+        
         if len(pokemons) < self.min_pokemon_qty or len(pokemons) > self.max_pokemon_qty:
-            raise serializers.ValidationError(self.error_messages['invalid_pokemon_quantity'])
+            errors.append({'invalid_pokemon_quantity': _(self.error_messages['invalid_pokemon_quantity'])})
+
+        if len(errors) > 0:
+            raise serializers.ValidationError(errors)
         return data
 

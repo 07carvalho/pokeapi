@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils.translation import ugettext_lazy as _
 from rest_framework import generics, serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,7 +11,9 @@ from apiV1.serializers.team import TeamSerializer, TeamRegistrationSerializer
 
 class TeamList(generics.ListCreateAPIView):
 
+    description = 'This route is used to list the teams of a user or create a new team.'
     permission_classes = (IsTrainer,)
+    serializer_class = TeamRegistrationSerializer
 
     def get_queryset(self):
         """
@@ -45,7 +48,7 @@ class TeamList(generics.ListCreateAPIView):
                     pokemon = Pokemon.objects.get(pk=pokemon_id)
                     team.pokemons.add(pokemon)
                 except Exception as e:
-                    raise serializers.ValidationError('You chose a pokemon that doesn\'t exist. Failed to create your team.')
+                    raise serializers.ValidationError({'invalid_pokemon': _('You chose a pokemon that doesn\'t exist. Failed to create your team.')})
 
         serializer = TeamSerializer(team)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -56,6 +59,7 @@ class TeamDetail(APIView):
     Get, update or delete a pokemon team.
     """
 
+    description = 'This route is used to get, update or delete a team of a user.'
     permission_classes = (IsTrainer,)
 
     def get_object(self, team_id):
@@ -64,7 +68,7 @@ class TeamDetail(APIView):
             self.check_object_permissions(self.request, obj)
             return obj
         except Team.DoesNotExist:
-            return Response(status=404)
+            raise serializers.ValidationError({'not_found': _('This team does not exist.')})
 
 
     def get(self, request, team_id, format=None):
@@ -92,7 +96,7 @@ class TeamDetail(APIView):
                     pokemon = Pokemon.objects.get(pk=pokemon_id)
                     team.pokemons.add(pokemon)
                 except Exception as e:
-                    raise serializers.ValidationError('You chose a pokemon that doesn\'t exist. Failed to create your team.')
+                    raise serializers.ValidationError({'invalid_pokemon': _('You chose a pokemon that doesn\'t exist. Failed to create your team.')})
 
             serializer = TeamSerializer(team)
             return Response(serializer.data, status=status.HTTP_200_OK)
